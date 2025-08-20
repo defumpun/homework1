@@ -29,35 +29,37 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.fontResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.ResourceFont
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.homework1.R
 import com.example.homework1.data.ItemText
-import kotlinx.coroutines.delay
+import com.example.homework1.viewModel.MainActivityViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.homework1.LocalCustomColors
 
 
 @Composable
-fun MyScreen(state: MutableState<Int>, animatedStates: MutableList<Boolean>) {
+fun MyScreen() {
+
+    val viewModel: MainActivityViewModel = viewModel()
 
     val configuration = LocalConfiguration.current
     val columns =
         if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             COLUMNS_LANDSCAPE
         } else COLUMNS_VERTICAL
-    val list = List(state.value) {
+    val list = List(viewModel.state.value) {
         ItemText(
             id = it,
             text = "$it",
         )
     }
+
+    val colors = LocalCustomColors.current
 
     Column {
         LazyVerticalGrid(
@@ -68,11 +70,11 @@ fun MyScreen(state: MutableState<Int>, animatedStates: MutableList<Boolean>) {
                 key = { it.id },
                 items = list,
             ) { item ->
-                animatedStates.add(false)
+                viewModel.addAnimationFlag()
                 val backgroundColor =
-                    if (item.id % 2 == 0) colorResource(R.color.first_column_color)
-                    else colorResource(R.color.second_column_color)
-                var isVisible by remember { mutableStateOf(animatedStates[item.id]) }
+                    if (item.id % 2 == 0) colors.firstColumnColor
+                    else  colors.secondColumnColor
+                var isVisible by remember { mutableStateOf(viewModel.animatedStates[item.id]) }
 
                 val enterAnimation = if (item.id % columns == 0) {
                     slideInVertically(initialOffsetY = { ANIMATION_OFFSET }) + fadeIn()
@@ -82,9 +84,8 @@ fun MyScreen(state: MutableState<Int>, animatedStates: MutableList<Boolean>) {
 
                 LaunchedEffect(item.id) {
                     if (!isVisible) {
-                        animatedStates[item.id] = true
+                        viewModel.animatedStates[item.id] = true
                         isVisible = true
-                        delay(1000)
                     }
                 }
 
@@ -105,8 +106,8 @@ fun MyScreen(state: MutableState<Int>, animatedStates: MutableList<Boolean>) {
                         ) {
                             Text(
                                 text = item.text,
-                                fontSize = 40.sp,
-                                color = Color.Green,
+                                fontSize = dimensionResource(id = R.dimen.text_size_large).value.sp,
+                                color = colors.background,
                                 modifier = Modifier
                                     .align(Alignment.Center),
                             )
@@ -120,15 +121,15 @@ fun MyScreen(state: MutableState<Int>, animatedStates: MutableList<Boolean>) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomEnd,
     ) {
-        Button1(state)
+        Button1(viewModel.state, { viewModel.addItem() })
     }
 }
 
 @Composable
-fun Button1(state: MutableState<Int>) {
+fun Button1(state: MutableState<Int>, onClick:() -> Unit) {
     Button(
         onClick = {
-            state.value += 1
+            onClick()
         },
         modifier = Modifier.padding(dimensionResource(R.dimen.small_padding))
     ) {
@@ -142,9 +143,7 @@ fun Button1(state: MutableState<Int>) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ActivityPreview() {
-    val state = mutableStateOf(START_ELEMENTS_COUNT)
-    val animatedStates = mutableListOf(true)
-    MyScreen(state, animatedStates)
+    MyScreen()
 }
 
 const val COLUMNS_VERTICAL = 3

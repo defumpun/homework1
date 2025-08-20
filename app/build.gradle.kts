@@ -58,4 +58,5 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.material)
     debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
 }
